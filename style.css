@@ -129,3 +129,88 @@ main {
   color: var(--soluk);
   font-size: 0.85rem;
 }
+/* Gün seçici ve gelişmiş görev formu */
+.gun-secici {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.gun-secici > button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 50%;
+  background: var(--yuzey);
+  color: var(--yazi);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gun-secici > button:hover { border-color: var(--vurgu); color: var(--vurgu); }
+
+.gun-bilgi { text-align: center; }
+.gun-bilgi h2 { margin: 0 0 0.25rem; }
+
+.gun-bilgi input {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  background: var(--yuzey);
+  color: var(--yazi);
+  font: inherit;
+}
+
+.gorev-formu { display: grid; }
+
+.form-satir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.form-satir label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--soluk);
+}
+
+.form-satir select,
+.form-satir input {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  background: var(--yuzey);
+  color: var(--yazi);
+  font: inherit;
+}
+
+/* Görev satırındaki yeni öğeler */
+.gorev { border-left: 4px solid var(--cizgi); }
+.gorev.oncelik-yuksek { border-left-color: #c0392b; }
+.gorev.oncelik-orta { border-left-color: #e0a100; }
+.gorev.oncelik-dusuk { border-left-color: #2e8b57; }
+
+.gorev .gorev-saat {
+  flex: none;
+  min-width: 3rem;
+  color: var(--soluk);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.gorev .etiket {
+  flex: none;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--vurgu-acik);
+  color: var(--vurgu);
+  font-size: 0.75rem;
+}
+
+.gorev.tamam .etiket { text-decoration: none; }

@@ -19,9 +19,42 @@
   </header>
 
   <main>
-    <section id="gunluk" class="panel active">
-      <h2>Bugün</h2>
-      <p class="empty">Henüz görev yok. Buraya bugünün yapılacaklarını ekleyeceğiz.</p>
+        <section id="gunluk" class="panel active">
+      <div class="gun-secici">
+        <button type="button" id="onceki-gun" aria-label="Önceki gün">‹</button>
+        <div class="gun-bilgi">
+          <h2 id="gun-baslik">Bugün</h2>
+          <input type="date" id="gun-girdisi" aria-label="Tarih seç">
+        </div>
+        <button type="button" id="sonraki-gun" aria-label="Sonraki gün">›</button>
+      </div>
+
+      <form id="gorev-formu" class="gorev-formu">
+        <input type="text" id="gorev-girdisi" placeholder="Yeni görev yaz" required>
+        <div class="form-satir">
+          <label>Saat
+            <input type="time" id="gorev-saat">
+          </label>
+          <label>Öncelik
+            <select id="gorev-oncelik">
+              <option value="yuksek">Yüksek</option>
+              <option value="orta" selected>Orta</option>
+              <option value="dusuk">Düşük</option>
+            </select>
+          </label>
+          <label>Kategori
+            <select id="gorev-kategori">
+              <option value="ders">Ders</option>
+              <option value="is">İş</option>
+              <option value="kisisel" selected>Kişisel</option>
+            </select>
+          </label>
+          <button type="submit">Ekle</button>
+        </div>
+      </form>
+
+      <ul id="gorev-listesi" class="gorev-listesi"></ul>
+      <p id="bos-mesaj" class="empty">Bu gün için görev yok. Yukarıdan ilk görevini ekle.</p>
     </section>
 
     <section id="haftalik" class="panel">
