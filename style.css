@@ -214,3 +214,93 @@ main {
 }
 
 .gorev.tamam .etiket { text-decoration: none; }
+/* Haftalık görünüm */
+.ikincil-btn {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 999px;
+  background: var(--yuzey);
+  color: var(--soluk);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ikincil-btn:hover { border-color: var(--vurgu); color: var(--vurgu); }
+
+.hafta-izgarasi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+
+.hafta-gun {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--yuzey);
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+}
+
+.hafta-gun.bugun {
+  border-color: var(--vurgu);
+  box-shadow: 0 0 0 1px var(--vurgu);
+}
+
+.hafta-gun-baslik {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--yazi);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hafta-gun-baslik strong { text-transform: capitalize; }
+.hafta-gun-baslik:hover strong { color: var(--vurgu); }
+.hafta-gun-baslik small { color: var(--soluk); }
+.hafta-gun-baslik:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+.hafta-gorevler {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hafta-gorev {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
+  border-left: 3px solid var(--cizgi);
+  border-radius: 4px;
+  background: var(--zemin);
+  font-size: 0.9rem;
+}
+
+.hafta-gorev.oncelik-yuksek { border-left-color: #c0392b; }
+.hafta-gorev.oncelik-orta { border-left-color: #e0a100; }
+.hafta-gorev.oncelik-dusuk { border-left-color: #2e8b57; }
+
+.hafta-gorev input { accent-color: var(--vurgu); }
+
+.hafta-gorev-saat {
+  color: var(--soluk);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hafta-gorev-metin { flex: 1; overflow-wrap: anywhere; }
+.hafta-gorev.tamam .hafta-gorev-metin { text-decoration: line-through; color: var(--soluk); }
+
+.hafta-bos { margin: 0; color: var(--soluk); font-size: 0.85rem; }

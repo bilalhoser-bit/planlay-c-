@@ -217,3 +217,140 @@ notFormu.addEventListener('submit', (e) => {
 });
 
 notlariCiz();
+// --- Haftalık görünüm ---
+const haftaBaslik = document.getElementById('hafta-baslik');
+const haftaIzgarasi = document.getElementById('hafta-izgarasi');
+const oncekiHafta = document.getElementById('onceki-hafta');
+const sonrakiHafta = document.getElementById('sonraki-hafta');
+const buHaftaDugmesi = document.getElementById('bu-hafta');
+
+// Verilen günün haftasının Pazartesi'sini bulur
+function pazartesiBul(d) {
+  const kopya = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const gunNo = (kopya.getDay() + 6) % 7; // Pazartesi = 0, Pazar = 6
+  kopya.setDate(kopya.getDate() - gunNo);
+  return kopya;
+}
+
+let haftaBaslangici = pazartesiBul(new Date());
+
+function haftaDegistir(fark) {
+  haftaBaslangici = new Date(
+    haftaBaslangici.getFullYear(),
+    haftaBaslangici.getMonth(),
+    haftaBaslangici.getDate() + fark * 7
+  );
+  haftaCiz();
+}
+
+function haftaCiz() {
+  const son = new Date(
+    haftaBaslangici.getFullYear(),
+    haftaBaslangici.getMonth(),
+    haftaBaslangici.getDate() + 6
+  );
+  const kisa = { day: 'numeric', month: 'long' };
+  haftaBaslik.textContent =
+    haftaBaslangici.toLocaleDateString('tr-TR', kisa) + ' – ' + son.toLocaleDateString('tr-TR', kisa);
+
+  haftaIzgarasi.innerHTML = '';
+  const bugun = tarihYaz(new Date());
+
+  for (let i = 0; i < 7; i++) {
+    const gun = new Date(
+      haftaBaslangici.getFullYear(),
+      haftaBaslangici.getMonth(),
+      haftaBaslangici.getDate() + i
+    );
+    const tarih = tarihYaz(gun);
+
+    const gunGorevleri = gorevler
+      .filter((g) => g.tarih === tarih)
+      .sort((a, b) => (a.saat || '99:99').localeCompare(b.saat || '99:99'));
+    const tamamlanan = gunGorevleri.filter((g) => g.tamam).length;
+
+    const kart = document.createElement('div');
+    kart.className = 'hafta-gun' + (tarih === bugun ? ' bugun' : '');
+
+    // Başlığa tıklayınca o günün günlük sayfası açılır
+    const baslik = document.createElement('button');
+    baslik.type = 'button';
+    baslik.className = 'hafta-gun-baslik';
+    baslik.title = 'Bu günü aç';
+
+    const ad = document.createElement('strong');
+    ad.textContent = gun.toLocaleDateString('tr-TR', { weekday: 'long' });
+
+    const bilgi = document.createElement('small');
+    let bilgiMetni = gun.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    if (gunGorevleri.length > 0) {
+      bilgiMetni += ' (' + tamamlanan + '/' + gunGorevleri.length + ')';
+    }
+    bilgi.textContent = bilgiMetni;
+
+    baslik.append(ad, bilgi);
+    baslik.addEventListener('click', () => {
+      seciliTarih = tarih;
+      ciz();
+      document.querySelector('[data-target="gunluk"]').click();
+    });
+    kart.appendChild(baslik);
+
+    if (gunGorevleri.length === 0) {
+      const bos = document.createElement('p');
+      bos.className = 'hafta-bos';
+      bos.textContent = 'Görev yok';
+      kart.appendChild(bos);
+    } else {
+      const ul = document.createElement('ul');
+      ul.className = 'hafta-gorevler';
+
+      gunGorevleri.forEach((gorev) => {
+        const li = document.createElement('li');
+        li.className = 'hafta-gorev oncelik-' + gorev.oncelik + (gorev.tamam ? ' tamam' : '');
+
+        const kutu = document.createElement('input');
+        kutu.type = 'checkbox';
+        kutu.checked = gorev.tamam;
+        kutu.setAttribute('aria-label', gorev.metin + ' tamamlandı');
+        kutu.addEventListener('change', () => {
+          gorev.tamam = kutu.checked;
+          kaydet();
+          haftaCiz();
+          ciz(); // günlük görünümü de güncel tut
+        });
+        li.appendChild(kutu);
+
+        if (gorev.saat) {
+          const saat = document.createElement('span');
+          saat.className = 'hafta-gorev-saat';
+          saat.textContent = gorev.saat;
+          li.appendChild(saat);
+        }
+
+        const metin = document.createElement('span');
+        metin.className = 'hafta-gorev-metin';
+        metin.textContent = gorev.metin;
+        li.appendChild(metin);
+
+        ul.appendChild(li);
+      });
+
+      kart.appendChild(ul);
+    }
+
+    haftaIzgarasi.appendChild(kart);
+  }
+}
+
+oncekiHafta.addEventListener('click', () => haftaDegistir(-1));
+sonrakiHafta.addEventListener('click', () => haftaDegistir(1));
+buHaftaDugmesi.addEventListener('click', () => {
+  haftaBaslangici = pazartesiBul(new Date());
+  haftaCiz();
+});
+
+// Günlük sekmesinde yapılan değişiklikler haftalığa da yansısın
+document.querySelector('[data-target="haftalik"]').addEventListener('click', haftaCiz);
+
+haftaCiz();

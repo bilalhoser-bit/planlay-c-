@@ -57,9 +57,17 @@
       <p id="bos-mesaj" class="empty">Bu gün için görev yok. Yukarıdan ilk görevini ekle.</p>
     </section>
 
-    <section id="haftalik" class="panel">
-      <h2>Bu hafta</h2>
-      <p class="empty">Haftalık plan görünümü burada olacak.</p>
+        <section id="haftalik" class="panel">
+      <div class="gun-secici">
+        <button type="button" id="onceki-hafta" aria-label="Önceki hafta">‹</button>
+        <div class="gun-bilgi">
+          <h2 id="hafta-baslik">Bu hafta</h2>
+          <button type="button" id="bu-hafta" class="ikincil-btn">Bu haftaya dön</button>
+        </div>
+        <button type="button" id="sonraki-hafta" aria-label="Sonraki hafta">›</button>
+      </div>
+
+      <div id="hafta-izgarasi" class="hafta-izgarasi"></div>
     </section>
 
     <section id="aylik" class="panel">
