@@ -11,7 +11,7 @@ const el = (tag, cls, text, ...kids) => {
 };
 
 // ---------- Veri ----------
-const ANAHTARLAR = ['gorevler', 'notlar', 'dersler', 'sinavlar', 'aliskanliklar', 'hedefler'];
+const ANAHTARLAR = ['gorevler', 'notlar', 'dersler', 'sinavlar', 'aliskanliklar', 'hedefler', 'vizyon', 'kazanimlar'];
 const veri = {};
 ANAHTARLAR.forEach((k) => (veri[k] = JSON.parse(localStorage.getItem(k)) || []));
 
@@ -268,7 +268,7 @@ function aliskCiz() {
 
 // ---------- Hepsini çiz ----------
 function ciz() {
-  gunCiz(); haftaCiz(); ayCiz(); programCiz(); derslerCiz(); notCiz(); aliskCiz();
+  gunCiz(); ilerlemeCiz(); haftaCiz(); ayCiz(); programCiz(); derslerCiz(); notCiz(); aliskCiz(); gelisimCiz();
 }
 
 // ---------- Sekmeler ve gezinme ----------
@@ -360,7 +360,64 @@ $('dosya').onchange = async (e) => {
     e.target.value = '';
   }
 };
+// ---------- Günün sözü ----------
+const SOZLER = [
+  'Bugün attığın küçük adım, yarınki büyük farkın başlangıcıdır.',
+  'Mükemmel olmak zorunda değilsin; başlamak ve devam etmek yeterli.',
+  'Yazdığın her satır kod, hayalindeki hayata eklenen bir tuğladır.',
+  'Yorulursan dinlen, ama vazgeçme.',
+  'Disiplin, motivasyonun bittiği yerde devreye giren sözündür.',
+  'Bugünkü emeğin, gelecekteki özgürlüğündür.',
+  'Küçük ilerleme de ilerlemedir. Devam et.',
+  'Kendini dünle değil, bir yıl önceki haline göre kıyasla.',
+  'Zor günde bile tamamladığın tek görev seni hedefe yaklaştırır.',
+  'Beceriler tekrarla büyür; sen de her gün biraz daha güçleniyorsun.',
+  'Bugün çalışmaya oturman, geleceğine yaptığın bir yatırımdır.',
+  'Hayalin büyükse bugünkü küçük görevler bile önemlidir.',
+];
+function sozCiz() {
+  $('soz').textContent = SOZLER[Math.floor(Date.now() / 864e5) % SOZLER.length];
+}
 
+// ---------- İlerleme halkası ----------
+function ilerlemeCiz() {
+  const L = gunGorevleri(sec);
+  const n = L.filter((g) => g.biten.includes(sec)).length;
+  const y = L.length ? Math.round((n * 100) / L.length) : 0;
+  $('halka').style.setProperty('--p', y);
+  $('halka-yuzde').textContent = y + '%';
+  $('ilerleme-baslik').textContent = L.length ? `${n}/${L.length} görev tamamlandı` : 'Bu gün için görev yok';
+  $('ilerleme-alt').textContent = !L.length ? 'Küçük bir hedefle güne başla.'
+    : y === 100 ? 'Günü tamamladın, kendinle gurur duy!'
+    : y >= 50 ? 'Yarıyı geçtin, devam et.'
+    : 'Bir görevle başla, gerisi gelir.';
+}
+
+// ---------- Gelişim ----------
+function gelisimCiz() {
+  const tamam = veri.gorevler.reduce((t, g) => t + g.biten.length, 0);
+  const enSeri = Math.max(0, ...veri.aliskanliklar.map(seri));
+  const hedefOrt = veri.hedefler.length
+    ? Math.round(veri.hedefler.reduce((t, h) => t + h.yuzde, 0) / veri.hedefler.length) : 0;
+  const kazanimGun = new Set(veri.kazanimlar.map((k) => k.tarih)).size;
+  const kart = (sayi, ad) => el('div', 'istat-kart', null, el('strong', null, String(sayi)), el('span', null, ad));
+  $('istat').replaceChildren(
+    kart(tamam, 'tamamlanan görev'), kart(enSeri, 'günlük alışkanlık serisi'),
+    kart('%' + hedefOrt, 'hedef ilerlemesi'), kart(kazanimGun, 'gün kazanım yazdın'));
+
+  doldur('v-liste', veri.vizyon, (v) =>
+    el('li', 'v-kart', null, el('small', null, v.sure), el('p', null, v.metin), sil('vizyon', v)),
+    'Henüz vizyon yok. İlk hayalini yaz.');
+
+  const son = [...veri.kazanimlar].sort((a, b) => b.id - a.id).slice(0, 10);
+  doldur('k-liste', son, (k) =>
+    el('li', 'oge', null, el('span', 'saat', bicim(k.tarih, { day: 'numeric', month: 'short' })),
+      el('span', 'metin', k.metin), sil('kazanimlar', k)),
+    'Henüz kazanım yok.');
+}
+formKur('vf', () => veri.vizyon.push({ id: Date.now(), metin: $('v-metin').value.trim(), sure: $('v-sure').value }));
+formKur('kf', () => veri.kazanimlar.push({ id: Date.now(), metin: $('k-metin').value.trim(), tarih: bugun() }));
+sozCiz();
 // ---------- Başlat ----------
 duzenle();
 ciz();

@@ -17,6 +17,7 @@
         <input type="file" id="dosya" accept=".json" hidden>
       </div>
     </div>
+        <p id="soz" class="soz"></p>
     <nav class="sekmeler" aria-label="Bölümler">
       <button class="tab active" data-target="gunluk">Günlük</button>
       <button class="tab" data-target="haftalik">Haftalık</button>
@@ -25,6 +26,7 @@
       <button class="tab" data-target="dersler">Dersler</button>
       <button class="tab" data-target="notlar">Notlar</button>
       <button class="tab" data-target="aliskanlik">Alışkanlıklar</button>
+      <button class="tab" data-target="gelisim">Gelişim</button>
     </nav>
   </header>
 
@@ -35,6 +37,13 @@
         <h2 id="b-gun"></h2>
         <button data-f="1" aria-label="Sonraki gün">›</button>
         <button data-f="0" class="ikincil">Bugün</button>
+      </div>
+            <div class="ilerleme">
+        <div class="halka" id="halka"><span id="halka-yuzde">0%</span></div>
+        <div>
+          <strong id="ilerleme-baslik"></strong>
+          <p id="ilerleme-alt" class="soluk"></p>
+        </div>
       </div>
       <form id="gf" class="form">
         <input id="g-metin" placeholder="Yeni görev" required>
@@ -154,6 +163,34 @@
         <button>Ekle</button>
       </form>
       <ul id="hd-liste" class="liste"></ul>
+    </section>
+        <section id="gelisim" class="panel">
+      <h2>Gelişimim</h2>
+      <div id="istat" class="istat"></div>
+
+      <h2>Vizyonum</h2>
+      <p class="soluk">Gelecekte nasıl bir hayat istediğini yaz. Her gün görmek, yolda kalmana yardım eder.</p>
+      <form id="vf" class="form satir">
+        <input id="v-metin" placeholder="Örn: Sevdiğim işte çalışan bir yazılım mühendisi olmak" required>
+        <label>Zaman
+          <select id="v-sure">
+            <option>1 yıl sonra</option>
+            <option>3 yıl sonra</option>
+            <option>5 yıl sonra</option>
+            <option>10 yıl sonra</option>
+          </select>
+        </label>
+        <button>Ekle</button>
+      </form>
+      <ul id="v-liste" class="vizyon"></ul>
+
+      <h2>Günlük kazanım</h2>
+      <p class="soluk">Bugün neyi başardın ya da neyi öğrendin? Küçük olması sorun değil.</p>
+      <form id="kf" class="form satir">
+        <input id="k-metin" placeholder="Bugün öğrendiğim ya da başardığım şey" required>
+        <button>Kaydet</button>
+      </form>
+      <ul id="k-liste" class="liste"></ul>
     </section>
   </main>
 
