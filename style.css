@@ -1,0 +1,71 @@
+/* Renkler tek yerde tanımlı: sonra değiştirmesi kolay olur */
+:root {
+  --zemin: #f2f5f4;
+  --yuzey: #ffffff;
+  --yazi: #16302b;
+  --soluk: #5d726d;
+  --vurgu: #0f766e;
+  --vurgu-acik: #d5ede9;
+  --cizgi: #d9e2df;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--zemin);
+  color: var(--yazi);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+.topbar {
+  background: var(--yuzey);
+  border-bottom: 1px solid var(--cizgi);
+  padding: 1rem 1.5rem 0;
+}
+
+.topbar h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  color: var(--soluk);
+  cursor: pointer;
+}
+
+.tab:hover { color: var(--yazi); }
+.tab.active { color: var(--vurgu); border-bottom-color: var(--vurgu); font-weight: 600; }
+.tab:focus-visible { outline: 2px solid var(--vurgu); outline-offset: -2px; }
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.panel h2 { margin-top: 0; }
+
+.empty {
+  background: var(--yuzey);
+  border: 1px dashed var(--cizgi);
+  border-radius: 8px;
+  padding: 1.25rem;
+  color: var(--soluk);
+}

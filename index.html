@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planlayıcım</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Planlayıcım</h1>
+    <nav class="tabs" aria-label="Bölümler">
+      <button class="tab active" data-target="gunluk">Günlük</button>
+      <button class="tab" data-target="haftalik">Haftalık</button>
+      <button class="tab" data-target="aylik">Aylık</button>
+      <button class="tab" data-target="program">Program</button>
+      <button class="tab" data-target="notlar">Notlar</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="gunluk" class="panel active">
+      <h2>Bugün</h2>
+      <p class="empty">Henüz görev yok. Buraya bugünün yapılacaklarını ekleyeceğiz.</p>
+    </section>
+
+    <section id="haftalik" class="panel">
+      <h2>Bu hafta</h2>
+      <p class="empty">Haftalık plan görünümü burada olacak.</p>
+    </section>
+
+    <section id="aylik" class="panel">
+      <h2>Bu ay</h2>
+      <p class="empty">Aylık hedefler ve yapılacaklar burada olacak.</p>
+    </section>
+
+    <section id="program" class="panel">
+      <h2>Detaylı program</h2>
+      <p class="empty">Saat saat programın burada olacak.</p>
+    </section>
+
+    <section id="notlar" class="panel">
+      <h2>Notlar</h2>
+      <p class="empty">Notların burada olacak.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
