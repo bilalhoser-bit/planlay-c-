@@ -69,3 +69,63 @@ main {
   padding: 1.25rem;
   color: var(--soluk);
 }
+/* Notlar */
+.not-formu {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.not-formu textarea {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  background: var(--yuzey);
+  color: var(--yazi);
+  font: inherit;
+  resize: vertical;
+}
+
+.not-formu button {
+  justify-self: start;
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--vurgu);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.not-formu button:hover { filter: brightness(1.1); }
+.not-formu textarea:focus-visible,
+.not-formu button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+.not-listesi {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.not {
+  background: var(--yuzey);
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.not p {
+  margin: 0 0 0.5rem;
+  white-space: pre-wrap; /* yazdığın satır sonlarını korur */
+}
+
+.not-alt {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--soluk);
+  font-size: 0.85rem;
+}

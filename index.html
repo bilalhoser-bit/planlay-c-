@@ -39,9 +39,14 @@
       <p class="empty">Saat saat programın burada olacak.</p>
     </section>
 
-    <section id="notlar" class="panel">
+        <section id="notlar" class="panel">
       <h2>Notlar</h2>
-      <p class="empty">Notların burada olacak.</p>
+      <form id="not-formu" class="not-formu">
+        <textarea id="not-girdisi" rows="3" placeholder="Yeni not yaz" required></textarea>
+        <button type="submit">Notu ekle</button>
+      </form>
+      <ul id="not-listesi" class="not-listesi"></ul>
+      <p id="not-bos" class="empty">Henüz not yok. Aklına gelen ilk şeyi yaz.</p>
     </section>
   </main>
 
