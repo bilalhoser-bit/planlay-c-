@@ -1,356 +1,366 @@
-// --- Sekmeler arasında geçiş ---
-const sekmeler = document.querySelectorAll('.tab');
-const bolumler = document.querySelectorAll('.panel');
+// ---------- Yardımcılar ----------
+const $ = (id) => document.getElementById(id);
 
-sekmeler.forEach((sekme) => {
-  sekme.addEventListener('click', () => {
-    sekmeler.forEach((s) => s.classList.remove('active'));
-    bolumler.forEach((b) => b.classList.remove('active'));
+// Küçük bir eleman üretici: el('etiket', 'sınıf', 'yazı', ...çocuklar)
+const el = (tag, cls, text, ...kids) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text) n.textContent = text;
+  n.append(...kids);
+  return n;
+};
 
-    sekme.classList.add('active');
-    document.getElementById(sekme.dataset.target).classList.add('active');
+// ---------- Veri ----------
+const ANAHTARLAR = ['gorevler', 'notlar', 'dersler', 'sinavlar', 'aliskanliklar', 'hedefler'];
+const veri = {};
+ANAHTARLAR.forEach((k) => (veri[k] = JSON.parse(localStorage.getItem(k)) || []));
+
+const kaydet = () => ANAHTARLAR.forEach((k) => localStorage.setItem(k, JSON.stringify(veri[k])));
+const degisti = () => { kaydet(); ciz(); };
+
+// ---------- Tarih ----------
+const yaz = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const coz = (s) => { const [y, a, g] = s.split('-').map(Number); return new Date(y, a - 1, g); };
+const bugun = () => yaz(new Date());
+const gunEkle = (s, n) => { const d = coz(s); d.setDate(d.getDate() + n); return yaz(d); };
+const bicim = (s, secenek) => coz(s).toLocaleDateString('tr-TR', secenek);
+
+let sec = bugun(); // seçili gün: tüm görünümler bunu kullanır
+
+const KAT = { ders: 'Ders', is: 'İş', kisisel: 'Kişisel' };
+const ONC = { yuksek: 'yüksek', orta: 'orta', dusuk: 'düşük' };
+const TEKRAR = { yok: '', gunluk: '↻ her gün', haftalik: '↻ her hafta', aylik: '↻ her ay' };
+const GUNLER = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+
+// Eski kayıtlarda eksik alanları tamamla
+function duzenle() {
+  veri.gorevler.forEach((g) => {
+    g.tarih ??= bugun(); g.saat ??= ''; g.oncelik ??= 'orta';
+    g.kategori ??= 'kisisel'; g.tekrar ??= 'yok';
+    g.biten ??= g.tamam ? [g.tarih] : [];
   });
-});
-
-// --- Günlük görevler ---
-const gunGirdisi = document.getElementById('gun-girdisi');
-const gunBaslik = document.getElementById('gun-baslik');
-const oncekiGun = document.getElementById('onceki-gun');
-const sonrakiGun = document.getElementById('sonraki-gun');
-const form = document.getElementById('gorev-formu');
-const girdi = document.getElementById('gorev-girdisi');
-const saatGirdisi = document.getElementById('gorev-saat');
-const oncelikSecimi = document.getElementById('gorev-oncelik');
-const kategoriSecimi = document.getElementById('gorev-kategori');
-const liste = document.getElementById('gorev-listesi');
-const bosMesaj = document.getElementById('bos-mesaj');
-
-const KATEGORILER = { ders: 'Ders', is: 'İş', kisisel: 'Kişisel' };
-const ONCELIKLER = { yuksek: 'yüksek', orta: 'orta', dusuk: 'düşük' };
-
-// Tarihi 'YYYY-MM-DD' biçiminde verir (bilgisayarının yerel saatine göre)
-function tarihYaz(d) {
-  const yil = d.getFullYear();
-  const ay = String(d.getMonth() + 1).padStart(2, '0');
-  const gun = String(d.getDate()).padStart(2, '0');
-  return `${yil}-${ay}-${gun}`;
+  veri.notlar.forEach((n) => { n.etiketler ??= []; });
 }
 
-let seciliTarih = tarihYaz(new Date());
-
-// Eski görevlerde tarih, saat, öncelik, kategori yok: eksikleri varsayılanla doldur
-let gorevler = (JSON.parse(localStorage.getItem('gorevler')) || []).map((g) => ({
-  tarih: tarihYaz(new Date()),
-  saat: '',
-  oncelik: 'orta',
-  kategori: 'kisisel',
-  ...g,
-}));
-
-function kaydet() {
-  localStorage.setItem('gorevler', JSON.stringify(gorevler));
-}
-
-function gunBasligiYaz() {
-  const [y, a, g] = seciliTarih.split('-').map(Number);
-  const uzun = new Date(y, a - 1, g).toLocaleDateString('tr-TR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-  const bugunMu = seciliTarih === tarihYaz(new Date());
-  gunBaslik.textContent = bugunMu ? 'Bugün, ' + uzun : uzun;
-  gunGirdisi.value = seciliTarih;
-}
-
-// fark: -1 önceki gün, +1 sonraki gün
-function gunDegistir(fark) {
-  const [y, a, g] = seciliTarih.split('-').map(Number);
-  seciliTarih = tarihYaz(new Date(y, a - 1, g + fark));
-  ciz();
-}
-
-function ciz() {
-  gunBasligiYaz();
-  liste.innerHTML = '';
-
-  // Sadece seçili günün görevlerini al ve saate göre sırala (saatsizler sona)
-  const gununGorevleri = gorevler
-    .filter((g) => g.tarih === seciliTarih)
+// Bir günde geçerli olan görevler (tekrar edenler dahil), saate göre sıralı
+function gunGorevleri(t) {
+  const d = coz(t);
+  return veri.gorevler
+    .filter((g) => {
+      if (t < g.tarih) return false;
+      const b = coz(g.tarih);
+      if (g.tekrar === 'gunluk') return true;
+      if (g.tekrar === 'haftalik') return b.getDay() === d.getDay();
+      if (g.tekrar === 'aylik') return b.getDate() === d.getDate();
+      return g.tarih === t;
+    })
     .sort((a, b) => (a.saat || '99:99').localeCompare(b.saat || '99:99'));
-
-  gununGorevleri.forEach((gorev) => {
-    const li = document.createElement('li');
-    li.className = 'gorev oncelik-' + gorev.oncelik + (gorev.tamam ? ' tamam' : '');
-    li.title = 'Öncelik: ' + ONCELIKLER[gorev.oncelik];
-
-    const kutu = document.createElement('input');
-    kutu.type = 'checkbox';
-    kutu.checked = gorev.tamam;
-    kutu.addEventListener('change', () => {
-      gorev.tamam = kutu.checked;
-      kaydet();
-      ciz();
-    });
-
-    const saat = document.createElement('span');
-    saat.className = 'gorev-saat';
-    saat.textContent = gorev.saat;
-
-    const metin = document.createElement('span');
-    metin.textContent = gorev.metin;
-
-    const etiket = document.createElement('span');
-    etiket.className = 'etiket';
-    etiket.textContent = KATEGORILER[gorev.kategori];
-
-    const sil = document.createElement('button');
-    sil.className = 'sil-btn';
-    sil.textContent = '×';
-    sil.setAttribute('aria-label', 'Görevi sil');
-    sil.addEventListener('click', () => {
-      gorevler = gorevler.filter((g) => g.id !== gorev.id);
-      kaydet();
-      ciz();
-    });
-
-    li.append(kutu, saat, metin, etiket, sil);
-    liste.appendChild(li);
-  });
-
-  bosMesaj.hidden = gununGorevleri.length > 0;
 }
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const metin = girdi.value.trim();
-  if (!metin) return;
+// ---------- Ortak parçalar ----------
+const silBtn = (fn) => {
+  const b = el('button', 'sil', '×');
+  b.setAttribute('aria-label', 'Sil');
+  b.onclick = fn;
+  return b;
+};
 
-  gorevler.push({
-    id: Date.now(),
-    metin: metin,
-    tamam: false,
-    tarih: seciliTarih,
-    saat: saatGirdisi.value,
-    oncelik: oncelikSecimi.value,
-    kategori: kategoriSecimi.value,
-  });
+const sil = (anahtar, oge) =>
+  silBtn(() => { veri[anahtar] = veri[anahtar].filter((x) => x !== oge); degisti(); });
 
-  girdi.value = '';
-  saatGirdisi.value = '';
-  kaydet();
-  ciz();
-});
+const doldur = (id, dizi, yap, bosYazi) =>
+  $(id).replaceChildren(...(dizi.length ? dizi.map((x) => yap(x)) : [el('li', 'bos', bosYazi)]));
 
-oncekiGun.addEventListener('click', () => gunDegistir(-1));
-sonrakiGun.addEventListener('click', () => gunDegistir(1));
+// Bir görevin liste satırı (t: hangi günün satırı olduğu)
+function gorevSatiri(g, t, silinebilir) {
+  const bitti = g.biten.includes(t);
+  const li = el('li', `oge ${g.oncelik}` + (bitti ? ' bitti' : ''));
+  li.title = 'Öncelik: ' + ONC[g.oncelik];
 
-gunGirdisi.addEventListener('change', () => {
-  if (gunGirdisi.value) {
-    seciliTarih = gunGirdisi.value;
-    ciz();
+  const kutu = el('input');
+  kutu.type = 'checkbox';
+  kutu.checked = bitti;
+  kutu.setAttribute('aria-label', g.metin + ' tamamlandı');
+  kutu.onchange = () => {
+    g.biten = kutu.checked ? [...g.biten, t] : g.biten.filter((x) => x !== t);
+    degisti();
+  };
+  li.append(kutu);
+  if (g.saat) li.append(el('span', 'saat', g.saat));
+  li.append(el('span', 'metin', g.metin));
+  li.append(el('span', 'etiket', KAT[g.kategori] + (TEKRAR[g.tekrar] ? ' ' + TEKRAR[g.tekrar] : '')));
+
+  if (silinebilir) {
+    li.append(silBtn(() => {
+      if (g.tekrar === 'yok' || confirm('Tekrar eden görev tüm günlerden silinecek. Silinsin mi?')) {
+        veri.gorevler = veri.gorevler.filter((x) => x !== g);
+        degisti();
+      }
+    }));
   }
-});
-
-ciz();
-
-// --- Notlar ---
-const notFormu = document.getElementById('not-formu');
-const notGirdisi = document.getElementById('not-girdisi');
-const notListesi = document.getElementById('not-listesi');
-const notBos = document.getElementById('not-bos');
-
-let notlar = JSON.parse(localStorage.getItem('notlar')) || [];
-
-function notlariKaydet() {
-  localStorage.setItem('notlar', JSON.stringify(notlar));
+  return li;
 }
 
-function notlariCiz() {
-  notListesi.innerHTML = '';
-
-  notlar.forEach((not) => {
-    const li = document.createElement('li');
-    li.className = 'not';
-
-    const metin = document.createElement('p');
-    metin.textContent = not.metin;
-
-    const alt = document.createElement('div');
-    alt.className = 'not-alt';
-
-    // not.id aslında eklenme anının zaman damgası, tarihi ondan üretiyoruz
-    const tarih = document.createElement('span');
-    tarih.textContent = new Date(not.id).toLocaleString('tr-TR', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
-
-    const sil = document.createElement('button');
-    sil.className = 'sil-btn';
-    sil.textContent = '×';
-    sil.setAttribute('aria-label', 'Notu sil');
-    sil.addEventListener('click', () => {
-      notlar = notlar.filter((n) => n.id !== not.id);
-      notlariKaydet();
-      notlariCiz();
-    });
-
-    alt.append(tarih, sil);
-    li.append(metin, alt);
-    notListesi.appendChild(li);
-  });
-
-  notBos.hidden = notlar.length > 0;
+// ---------- Günlük ----------
+function gunCiz() {
+  const baslik = (sec === bugun() ? 'Bugün, ' : '') + bicim(sec, { weekday: 'long', day: 'numeric', month: 'long' });
+  $('b-gun').textContent = baslik;
+  $('b-program').textContent = baslik;
+  doldur('g-liste', gunGorevleri(sec), (g) => gorevSatiri(g, sec, true), 'Bu gün için görev yok.');
 }
 
-notFormu.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const metin = notGirdisi.value.trim();
-  if (!metin) return;
-
-  // unshift: yeni notu listenin başına ekler, en yeni not en üstte görünür
-  notlar.unshift({ id: Date.now(), metin: metin });
-  notGirdisi.value = '';
-  notlariKaydet();
-  notlariCiz();
-});
-
-notlariCiz();
-// --- Haftalık görünüm ---
-const haftaBaslik = document.getElementById('hafta-baslik');
-const haftaIzgarasi = document.getElementById('hafta-izgarasi');
-const oncekiHafta = document.getElementById('onceki-hafta');
-const sonrakiHafta = document.getElementById('sonraki-hafta');
-const buHaftaDugmesi = document.getElementById('bu-hafta');
-
-// Verilen günün haftasının Pazartesi'sini bulur
-function pazartesiBul(d) {
-  const kopya = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const gunNo = (kopya.getDay() + 6) % 7; // Pazartesi = 0, Pazar = 6
-  kopya.setDate(kopya.getDate() - gunNo);
-  return kopya;
-}
-
-let haftaBaslangici = pazartesiBul(new Date());
-
-function haftaDegistir(fark) {
-  haftaBaslangici = new Date(
-    haftaBaslangici.getFullYear(),
-    haftaBaslangici.getMonth(),
-    haftaBaslangici.getDate() + fark * 7
-  );
-  haftaCiz();
-}
-
+// ---------- Haftalık ----------
 function haftaCiz() {
-  const son = new Date(
-    haftaBaslangici.getFullYear(),
-    haftaBaslangici.getMonth(),
-    haftaBaslangici.getDate() + 6
-  );
+  const p = gunEkle(sec, -((coz(sec).getDay() + 6) % 7)); // haftanın Pazartesi'si
   const kisa = { day: 'numeric', month: 'long' };
-  haftaBaslik.textContent =
-    haftaBaslangici.toLocaleDateString('tr-TR', kisa) + ' – ' + son.toLocaleDateString('tr-TR', kisa);
+  $('b-hafta').textContent = bicim(p, kisa) + ' – ' + bicim(gunEkle(p, 6), kisa);
 
-  haftaIzgarasi.innerHTML = '';
-  const bugun = tarihYaz(new Date());
-
+  const kartlar = [];
   for (let i = 0; i < 7; i++) {
-    const gun = new Date(
-      haftaBaslangici.getFullYear(),
-      haftaBaslangici.getMonth(),
-      haftaBaslangici.getDate() + i
-    );
-    const tarih = tarihYaz(gun);
+    const t = gunEkle(p, i);
+    const L = gunGorevleri(t);
+    const n = L.filter((g) => g.biten.includes(t)).length;
 
-    const gunGorevleri = gorevler
-      .filter((g) => g.tarih === tarih)
-      .sort((a, b) => (a.saat || '99:99').localeCompare(b.saat || '99:99'));
-    const tamamlanan = gunGorevleri.filter((g) => g.tamam).length;
+    const bas = el('button', 'hbas', null,
+      el('strong', null, bicim(t, { weekday: 'long' })),
+      el('small', null, bicim(t, { day: 'numeric', month: 'short' }) + (L.length ? ` (${n}/${L.length})` : '')));
+    bas.onclick = () => { sec = t; ciz(); sekmeAc('gunluk'); };
 
-    const kart = document.createElement('div');
-    kart.className = 'hafta-gun' + (tarih === bugun ? ' bugun' : '');
-
-    // Başlığa tıklayınca o günün günlük sayfası açılır
-    const baslik = document.createElement('button');
-    baslik.type = 'button';
-    baslik.className = 'hafta-gun-baslik';
-    baslik.title = 'Bu günü aç';
-
-    const ad = document.createElement('strong');
-    ad.textContent = gun.toLocaleDateString('tr-TR', { weekday: 'long' });
-
-    const bilgi = document.createElement('small');
-    let bilgiMetni = gun.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-    if (gunGorevleri.length > 0) {
-      bilgiMetni += ' (' + tamamlanan + '/' + gunGorevleri.length + ')';
-    }
-    bilgi.textContent = bilgiMetni;
-
-    baslik.append(ad, bilgi);
-    baslik.addEventListener('click', () => {
-      seciliTarih = tarih;
-      ciz();
-      document.querySelector('[data-target="gunluk"]').click();
-    });
-    kart.appendChild(baslik);
-
-    if (gunGorevleri.length === 0) {
-      const bos = document.createElement('p');
-      bos.className = 'hafta-bos';
-      bos.textContent = 'Görev yok';
-      kart.appendChild(bos);
-    } else {
-      const ul = document.createElement('ul');
-      ul.className = 'hafta-gorevler';
-
-      gunGorevleri.forEach((gorev) => {
-        const li = document.createElement('li');
-        li.className = 'hafta-gorev oncelik-' + gorev.oncelik + (gorev.tamam ? ' tamam' : '');
-
-        const kutu = document.createElement('input');
-        kutu.type = 'checkbox';
-        kutu.checked = gorev.tamam;
-        kutu.setAttribute('aria-label', gorev.metin + ' tamamlandı');
-        kutu.addEventListener('change', () => {
-          gorev.tamam = kutu.checked;
-          kaydet();
-          haftaCiz();
-          ciz(); // günlük görünümü de güncel tut
-        });
-        li.appendChild(kutu);
-
-        if (gorev.saat) {
-          const saat = document.createElement('span');
-          saat.className = 'hafta-gorev-saat';
-          saat.textContent = gorev.saat;
-          li.appendChild(saat);
-        }
-
-        const metin = document.createElement('span');
-        metin.className = 'hafta-gorev-metin';
-        metin.textContent = gorev.metin;
-        li.appendChild(metin);
-
-        ul.appendChild(li);
-      });
-
-      kart.appendChild(ul);
-    }
-
-    haftaIzgarasi.appendChild(kart);
+    const kart = el('div', 'hgun' + (t === bugun() ? ' bugun' : ''), null, bas);
+    kart.append(...(L.length ? L.map((g) => gorevSatiri(g, t, false)) : [el('small', 'soluk', 'Görev yok')]));
+    kartlar.push(kart);
   }
+  $('h-izgara').replaceChildren(...kartlar);
 }
 
-oncekiHafta.addEventListener('click', () => haftaDegistir(-1));
-sonrakiHafta.addEventListener('click', () => haftaDegistir(1));
-buHaftaDugmesi.addEventListener('click', () => {
-  haftaBaslangici = pazartesiBul(new Date());
-  haftaCiz();
+// ---------- Aylık ----------
+function ayCiz() {
+  const d = coz(sec);
+  $('b-ay').textContent = d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  const ilk = new Date(d.getFullYear(), d.getMonth(), 1);
+  const bas = gunEkle(yaz(ilk), -((ilk.getDay() + 6) % 7));
+
+  const hucreler = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((x) => el('div', 'ay-baslik', x));
+  for (let i = 0; i < 42; i++) {
+    const t = gunEkle(bas, i);
+    const n = gunGorevleri(t).length;
+    const sinif = 'ay-hucre'
+      + (coz(t).getMonth() !== d.getMonth() ? ' disari' : '')
+      + (t === bugun() ? ' bugun' : '')
+      + (t === sec ? ' sec' : '')
+      + (veri.sinavlar.some((s) => s.tarih === t) ? ' sinavli' : '');
+    const h = el('button', sinif, null,
+      el('span', null, String(coz(t).getDate())),
+      el('small', null, n ? '● ' + n : ''));
+    h.onclick = () => { sec = t; ciz(); sekmeAc('gunluk'); };
+    hucreler.push(h);
+  }
+  $('a-izgara').replaceChildren(...hucreler);
+}
+
+// ---------- Saat saat program ----------
+const dersOgesi = (x) => el('li', 'oge ders', null, el('span', 'metin', x.ad), el('span', 'etiket', 'Ders'));
+const sinavOgesi = (x) => el('li', 'oge sinav', null, el('span', 'metin', x.ad), el('span', 'etiket', 'Sınav'));
+
+function programCiz() {
+  const L = gunGorevleri(sec);
+  const dersler = veri.dersler.filter((x) => +x.gun === coz(sec).getDay());
+  const satirlar = [];
+  const satir = (etiket, ...ogeler) => {
+    if (ogeler.length) {
+      satirlar.push(el('div', 'saat-satir', null, el('span', null, etiket), el('ul', 'liste', null, ...ogeler)));
+    }
+  };
+
+  satir('Gün boyu',
+    ...veri.sinavlar.filter((x) => x.tarih === sec).map(sinavOgesi),
+    ...L.filter((g) => !g.saat).map((g) => gorevSatiri(g, sec, false)));
+
+  for (let s = 0; s < 24; s++) {
+    const hh = String(s).padStart(2, '0');
+    satir(hh + ':00',
+      ...dersler.filter((x) => x.saat.slice(0, 2) === hh).map(dersOgesi),
+      ...L.filter((g) => g.saat.slice(0, 2) === hh).map((g) => gorevSatiri(g, sec, false)));
+  }
+  if (!satirlar.length) satirlar.push(el('div', 'bos', 'Bu gün için programda bir şey yok.'));
+  $('p-liste').replaceChildren(...satirlar);
+}
+
+// ---------- Dersler ve sınavlar ----------
+function derslerCiz() {
+  const siraliDers = [...veri.dersler].sort(
+    (a, b) => ((+a.gun + 6) % 7) - ((+b.gun + 6) % 7) || a.saat.localeCompare(b.saat));
+  doldur('d-liste', siraliDers, (x) =>
+    el('li', 'oge ders', null, el('span', 'saat', `${GUNLER[x.gun]} ${x.saat}`), el('span', 'metin', x.ad), sil('dersler', x)),
+    'Henüz ders eklenmedi.');
+
+  const siraliSinav = [...veri.sinavlar].sort((a, b) => a.tarih.localeCompare(b.tarih));
+  doldur('s-liste', siraliSinav, (x) => {
+    const kalan = Math.round((coz(x.tarih) - coz(bugun())) / 864e5);
+    const yazi = kalan > 0 ? `${kalan} gün kaldı` : kalan === 0 ? 'Bugün' : 'Geçti';
+    return el('li', 'oge sinav', null,
+      el('span', 'saat', bicim(x.tarih, { day: 'numeric', month: 'short' })),
+      el('span', 'metin', x.ad), el('span', 'etiket', yazi), sil('sinavlar', x));
+  }, 'Henüz sınav eklenmedi.');
+}
+
+// ---------- Notlar ----------
+function notCiz() {
+  const q = $('n-ara').value.trim().toLowerCase();
+  const L = veri.notlar.filter((n) =>
+    !q || n.metin.toLowerCase().includes(q) || n.etiketler.some((e) => e.toLowerCase().includes(q)));
+
+  doldur('n-liste', L, (n) => {
+    const p = el('p', 'n-metin', n.metin);
+    p.contentEditable = 'true'; // tıklayıp doğrudan düzenle, dışına tıklayınca kaydolur
+    p.title = 'Düzenlemek için tıkla';
+    p.onblur = () => {
+      const m = p.innerText.trim();
+      if (m) { n.metin = m; kaydet(); } else p.textContent = n.metin;
+    };
+
+    const etiketler = n.etiketler.map((e) => {
+      const b = el('button', 'etiket', '#' + e);
+      b.onclick = () => { $('n-ara').value = e; notCiz(); };
+      return b;
+    });
+    const alt = el('div', 'alt', null, ...etiketler, el('span', 'bosluk'),
+      el('small', null, new Date(n.id).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })),
+      sil('notlar', n));
+    return el('li', 'oge not-kart', null, p, alt);
+  }, 'Not bulunamadı.');
+}
+
+// ---------- Alışkanlıklar ve hedefler ----------
+function seri(a) {
+  let t = a.gunler.includes(sec) ? sec : gunEkle(sec, -1);
+  let n = 0;
+  while (a.gunler.includes(t)) { n++; t = gunEkle(t, -1); }
+  return n;
+}
+
+function aliskCiz() {
+  $('al-baslik').textContent = 'Seçili gün: ' + bicim(sec, { weekday: 'long', day: 'numeric', month: 'long' });
+
+  doldur('al-liste', veri.aliskanliklar, (a) => {
+    const k = el('input');
+    k.type = 'checkbox';
+    k.checked = a.gunler.includes(sec);
+    k.setAttribute('aria-label', a.ad + ' yapıldı');
+    k.onchange = () => {
+      a.gunler = k.checked ? [...a.gunler, sec] : a.gunler.filter((x) => x !== sec);
+      degisti();
+    };
+    return el('li', 'oge', null, k, el('span', 'metin', a.ad), el('span', 'etiket', seri(a) + ' gün seri'), sil('aliskanliklar', a));
+  }, 'Henüz alışkanlık eklenmedi.');
+
+  doldur('hd-liste', veri.hedefler, (h) => {
+    const r = el('input');
+    r.type = 'range'; r.min = 0; r.max = 100; r.step = 5; r.value = h.yuzde;
+    r.setAttribute('aria-label', h.ad + ' ilerlemesi');
+    const y = el('span', 'etiket', '%' + h.yuzde);
+    r.oninput = () => { y.textContent = '%' + r.value; };
+    r.onchange = () => { h.yuzde = +r.value; kaydet(); };
+    return el('li', 'oge', null, el('span', 'metin', h.ad), r, y, sil('hedefler', h));
+  }, 'Henüz hedef eklenmedi.');
+}
+
+// ---------- Hepsini çiz ----------
+function ciz() {
+  gunCiz(); haftaCiz(); ayCiz(); programCiz(); derslerCiz(); notCiz(); aliskCiz();
+}
+
+// ---------- Sekmeler ve gezinme ----------
+const sekmeler = document.querySelectorAll('.tab');
+const paneller = document.querySelectorAll('.panel');
+sekmeler.forEach((s) => {
+  s.onclick = () => {
+    sekmeler.forEach((x) => x.classList.toggle('active', x === s));
+    paneller.forEach((p) => p.classList.toggle('active', p.id === s.dataset.target));
+  };
+});
+const sekmeAc = (id) => document.querySelector(`[data-target="${id}"]`).click();
+
+// Her görünümün üstündeki ‹ › Bugün düğmeleri
+document.querySelectorAll('.nav').forEach((nav) => {
+  nav.addEventListener('click', (e) => {
+    const f = e.target.dataset.f;
+    if (f === undefined) return;
+    const k = +f;
+    const tur = nav.dataset.nav;
+    if (k === 0) sec = bugun();
+    else if (tur === 'hafta') sec = gunEkle(sec, 7 * k);
+    else if (tur === 'ay') { const d = coz(sec); d.setMonth(d.getMonth() + k, 1); sec = yaz(d); }
+    else sec = gunEkle(sec, k);
+    ciz();
+  });
 });
 
-// Günlük sekmesinde yapılan değişiklikler haftalığa da yansısın
-document.querySelector('[data-target="haftalik"]').addEventListener('click', haftaCiz);
+// ---------- Formlar ----------
+function formKur(id, fn) {
+  $(id).onsubmit = (e) => {
+    e.preventDefault();
+    fn();
+    e.target.reset();
+    degisti();
+  };
+}
 
-haftaCiz();
+formKur('gf', () => {
+  const metin = $('g-metin').value.trim();
+  if (!metin) return;
+  veri.gorevler.push({
+    id: Date.now(), metin, tarih: sec, saat: $('g-saat').value,
+    oncelik: $('g-onc').value, kategori: $('g-kat').value, tekrar: $('g-tekrar').value, biten: [],
+  });
+});
+formKur('df', () => veri.dersler.push({ id: Date.now(), ad: $('d-ad').value.trim(), gun: $('d-gun').value, saat: $('d-saat').value }));
+formKur('sf', () => veri.sinavlar.push({ id: Date.now(), ad: $('s-ad').value.trim(), tarih: $('s-tarih').value }));
+formKur('nf', () => {
+  const metin = $('n-metin').value.trim();
+  if (!metin) return;
+  const etiketler = $('n-etiket').value.split(',').map((e) => e.trim().replace(/^#/, '')).filter(Boolean);
+  veri.notlar.unshift({ id: Date.now(), metin, etiketler });
+});
+formKur('af', () => veri.aliskanliklar.push({ id: Date.now(), ad: $('al-ad').value.trim(), gunler: [] }));
+formKur('hdf', () => veri.hedefler.push({ id: Date.now(), ad: $('hd-ad').value.trim(), yuzde: 0 }));
+$('n-ara').oninput = notCiz;
+
+// ---------- Karanlık mod ----------
+function temaUygula(t) {
+  document.documentElement.dataset.tema = t;
+  $('tema').textContent = t === 'koyu' ? 'Açık mod' : 'Karanlık mod';
+  localStorage.setItem('tema', t);
+}
+temaUygula(localStorage.getItem('tema') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'koyu' : 'acik'));
+$('tema').onclick = () => temaUygula(document.documentElement.dataset.tema === 'koyu' ? 'acik' : 'koyu');
+
+// ---------- Yedekleme ----------
+$('yedekle').onclick = () => {
+  const a = el('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' }));
+  a.download = `planlayici-yedek-${bugun()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('yukle').onclick = () => $('dosya').click();
+$('dosya').onchange = async (e) => {
+  const dosya = e.target.files[0];
+  if (!dosya) return;
+  try {
+    const y = JSON.parse(await dosya.text());
+    if (!confirm('Mevcut verilerin yedekteki verilerle değiştirilecek. Devam edilsin mi?')) return;
+    ANAHTARLAR.forEach((k) => (veri[k] = Array.isArray(y[k]) ? y[k] : []));
+    duzenle();
+    degisti();
+  } catch {
+    alert('Dosya okunamadı. Planlayıcıdan aldığın bir yedek dosyası seçtiğinden emin ol.');
+  } finally {
+    e.target.value = '';
+  }
+};
+
+// ---------- Başlat ----------
+duzenle();
+ciz();

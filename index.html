@@ -7,87 +7,153 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1>Planlayıcım</h1>
-    <nav class="tabs" aria-label="Bölümler">
+  <header class="ust">
+    <div class="ust-satir">
+      <h1>Planlayıcım</h1>
+      <div class="araclar">
+        <button id="tema" class="ikincil" type="button">Karanlık mod</button>
+        <button id="yedekle" class="ikincil" type="button">Yedekle</button>
+        <button id="yukle" class="ikincil" type="button">Geri yükle</button>
+        <input type="file" id="dosya" accept=".json" hidden>
+      </div>
+    </div>
+    <nav class="sekmeler" aria-label="Bölümler">
       <button class="tab active" data-target="gunluk">Günlük</button>
       <button class="tab" data-target="haftalik">Haftalık</button>
       <button class="tab" data-target="aylik">Aylık</button>
       <button class="tab" data-target="program">Program</button>
+      <button class="tab" data-target="dersler">Dersler</button>
       <button class="tab" data-target="notlar">Notlar</button>
+      <button class="tab" data-target="aliskanlik">Alışkanlıklar</button>
     </nav>
   </header>
 
   <main>
-        <section id="gunluk" class="panel active">
-      <div class="gun-secici">
-        <button type="button" id="onceki-gun" aria-label="Önceki gün">‹</button>
-        <div class="gun-bilgi">
-          <h2 id="gun-baslik">Bugün</h2>
-          <input type="date" id="gun-girdisi" aria-label="Tarih seç">
-        </div>
-        <button type="button" id="sonraki-gun" aria-label="Sonraki gün">›</button>
+    <section id="gunluk" class="panel active">
+      <div class="nav" data-nav="gun">
+        <button data-f="-1" aria-label="Önceki gün">‹</button>
+        <h2 id="b-gun"></h2>
+        <button data-f="1" aria-label="Sonraki gün">›</button>
+        <button data-f="0" class="ikincil">Bugün</button>
       </div>
-
-      <form id="gorev-formu" class="gorev-formu">
-        <input type="text" id="gorev-girdisi" placeholder="Yeni görev yaz" required>
-        <div class="form-satir">
-          <label>Saat
-            <input type="time" id="gorev-saat">
-          </label>
+      <form id="gf" class="form">
+        <input id="g-metin" placeholder="Yeni görev" required>
+        <div class="satir">
+          <label>Saat <input type="time" id="g-saat"></label>
           <label>Öncelik
-            <select id="gorev-oncelik">
+            <select id="g-onc">
               <option value="yuksek">Yüksek</option>
               <option value="orta" selected>Orta</option>
               <option value="dusuk">Düşük</option>
             </select>
           </label>
           <label>Kategori
-            <select id="gorev-kategori">
+            <select id="g-kat">
               <option value="ders">Ders</option>
               <option value="is">İş</option>
               <option value="kisisel" selected>Kişisel</option>
             </select>
           </label>
-          <button type="submit">Ekle</button>
+          <label>Tekrar
+            <select id="g-tekrar">
+              <option value="yok">Yok</option>
+              <option value="gunluk">Her gün</option>
+              <option value="haftalik">Her hafta</option>
+              <option value="aylik">Her ay</option>
+            </select>
+          </label>
+          <button>Ekle</button>
         </div>
       </form>
-
-      <ul id="gorev-listesi" class="gorev-listesi"></ul>
-      <p id="bos-mesaj" class="empty">Bu gün için görev yok. Yukarıdan ilk görevini ekle.</p>
+      <ul id="g-liste" class="liste"></ul>
     </section>
 
-        <section id="haftalik" class="panel">
-      <div class="gun-secici">
-        <button type="button" id="onceki-hafta" aria-label="Önceki hafta">‹</button>
-        <div class="gun-bilgi">
-          <h2 id="hafta-baslik">Bu hafta</h2>
-          <button type="button" id="bu-hafta" class="ikincil-btn">Bu haftaya dön</button>
-        </div>
-        <button type="button" id="sonraki-hafta" aria-label="Sonraki hafta">›</button>
+    <section id="haftalik" class="panel">
+      <div class="nav" data-nav="hafta">
+        <button data-f="-1" aria-label="Önceki hafta">‹</button>
+        <h2 id="b-hafta"></h2>
+        <button data-f="1" aria-label="Sonraki hafta">›</button>
+        <button data-f="0" class="ikincil">Bu hafta</button>
       </div>
-
-      <div id="hafta-izgarasi" class="hafta-izgarasi"></div>
+      <div id="h-izgara" class="izgara"></div>
     </section>
 
     <section id="aylik" class="panel">
-      <h2>Bu ay</h2>
-      <p class="empty">Aylık hedefler ve yapılacaklar burada olacak.</p>
+      <div class="nav" data-nav="ay">
+        <button data-f="-1" aria-label="Önceki ay">‹</button>
+        <h2 id="b-ay"></h2>
+        <button data-f="1" aria-label="Sonraki ay">›</button>
+        <button data-f="0" class="ikincil">Bu ay</button>
+      </div>
+      <div id="a-izgara" class="ay-izgara"></div>
     </section>
 
     <section id="program" class="panel">
-      <h2>Detaylı program</h2>
-      <p class="empty">Saat saat programın burada olacak.</p>
+      <div class="nav" data-nav="program">
+        <button data-f="-1" aria-label="Önceki gün">‹</button>
+        <h2 id="b-program"></h2>
+        <button data-f="1" aria-label="Sonraki gün">›</button>
+        <button data-f="0" class="ikincil">Bugün</button>
+      </div>
+      <div id="p-liste" class="program"></div>
     </section>
 
-        <section id="notlar" class="panel">
-      <h2>Notlar</h2>
-      <form id="not-formu" class="not-formu">
-        <textarea id="not-girdisi" rows="3" placeholder="Yeni not yaz" required></textarea>
-        <button type="submit">Notu ekle</button>
+    <section id="dersler" class="panel">
+      <h2>Haftalık ders programı</h2>
+      <form id="df" class="form satir">
+        <input id="d-ad" placeholder="Ders adı" required>
+        <label>Gün
+          <select id="d-gun">
+            <option value="1">Pazartesi</option>
+            <option value="2">Salı</option>
+            <option value="3">Çarşamba</option>
+            <option value="4">Perşembe</option>
+            <option value="5">Cuma</option>
+            <option value="6">Cumartesi</option>
+            <option value="0">Pazar</option>
+          </select>
+        </label>
+        <label>Saat <input type="time" id="d-saat" required></label>
+        <button>Ekle</button>
       </form>
-      <ul id="not-listesi" class="not-listesi"></ul>
-      <p id="not-bos" class="empty">Henüz not yok. Aklına gelen ilk şeyi yaz.</p>
+      <ul id="d-liste" class="liste"></ul>
+
+      <h2>Sınavlar</h2>
+      <form id="sf" class="form satir">
+        <input id="s-ad" placeholder="Sınav (ör. Veri Yapıları vize)" required>
+        <label>Tarih <input type="date" id="s-tarih" required></label>
+        <button>Ekle</button>
+      </form>
+      <ul id="s-liste" class="liste"></ul>
+    </section>
+
+    <section id="notlar" class="panel">
+      <form id="nf" class="form">
+        <textarea id="n-metin" rows="3" placeholder="Yeni not" required></textarea>
+        <div class="satir">
+          <input id="n-etiket" placeholder="Etiketler (virgülle ayır)">
+          <button>Notu ekle</button>
+        </div>
+      </form>
+      <input id="n-ara" type="search" class="ara" placeholder="Notlarda ara (yazı ya da etiket)">
+      <ul id="n-liste" class="liste"></ul>
+    </section>
+
+    <section id="aliskanlik" class="panel">
+      <h2>Alışkanlıklar</h2>
+      <p id="al-baslik" class="soluk"></p>
+      <form id="af" class="form satir">
+        <input id="al-ad" placeholder="Yeni alışkanlık (ör. 30 dk kitap)" required>
+        <button>Ekle</button>
+      </form>
+      <ul id="al-liste" class="liste"></ul>
+
+      <h2>Hedefler</h2>
+      <form id="hdf" class="form satir">
+        <input id="hd-ad" placeholder="Yeni hedef" required>
+        <button>Ekle</button>
+      </form>
+      <ul id="hd-liste" class="liste"></ul>
     </section>
   </main>
 
